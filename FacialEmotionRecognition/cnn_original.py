@@ -24,16 +24,6 @@ from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.utils import np_utils
 from keras import backend as K
-from keras.layers import Activation, Convolution2D, Dropout, Conv2D, ZeroPadding2D
-from keras.layers import AveragePooling2D, BatchNormalization
-from keras.layers import GlobalAveragePooling2D
-from keras.layers import Flatten
-from keras.models import Model
-from keras.layers import Input
-from keras.layers import SeparableConv2D
-from keras import layers
-from keras.regularizers import l2
-from keras.optimizers import SGD,Adadelta
 
 batch_size = 30
 nb_classes = 8
@@ -42,7 +32,7 @@ nb_epoch = 50
 # number of convolutional filters to use
 nb_filters = 64
 # size of pooling area for max pooling
-pool_size = (2, 2)
+pool_size = (4, 4)
 # convolution kernel size
 kernel_size = (5, 5)
 
@@ -78,24 +68,10 @@ Y_test = np_utils.to_categorical(y_test, nb_classes)
 model = Sequential()
 
 #adding 2 Convolutional Layers and a maxpooling layer with activation function rectified linear unit and  Dropout for regularization
-#---------------------------------------------------------------
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode='valid', input_shape=input_shape))
+model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
+                        border_mode='valid',
+                        input_shape=input_shape))
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
-model.add(Dropout(0.25))
-
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
-model.add(Dropout(0.25))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
-model.add(Dropout(0.25))
-
 model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=pool_size))
@@ -103,43 +79,16 @@ model.add(Dropout(0.25))
 
 #A Fully Conntected Layer with relu and a output layer with softmax
 model.add(Flatten())
-model.add(Dense(64))
+model.add(Dense(128))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
 model.add(Dense(nb_classes))
 model.add(Activation('softmax'))
-#-----------------------------------------------------------------
 
 #compiling the model
-#model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
-
-#model.add(Convolution2D(32, 3,3,border_mode='same',input_shape=input_shape))
-#model.add(Activation('relu'))
-#model.add(Convolution2D(32, kernel_size[0], kernel_size[1]))
-#model.add(Activation('relu'))
-#model.add(MaxPooling2D(pool_size=(2, 2)))
-#model.add(Dropout(0.5))
-
-#model.add(Convolution2D(64, kernel_size[0], kernel_size[1]))
-#model.add(Activation('relu'))
-#model.add(Convolution2D(64, kernel_size[0], kernel_size[1]))
-#model.add(Activation('relu'))
-#model.add(MaxPooling2D(pool_size=(2, 2)))
-#model.add(Dropout(0.5))
-#model.add(Activation('relu'))
-#model.add(MaxPooling2D(pool_size=(2, 2)))
-#model.add(Dropout(0.5))
-
-#model.add(Flatten())
-#model.add(Dense(64))
-#model.add(Activation('relu'))
-#model.add(Dropout(0.5))
-#model.add(Dense(nb_classes))
-#model.add(Activation('softmax'))
-
-sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-model.compile(loss='categorical_crossentropy', optimizer=sgd,metrics=["accuracy"])
-#model.compile(loss='categorical_hinge', optimizer='rmsprop',metrics=["accuracy"])
+model.compile(loss='categorical_crossentropy',
+              optimizer='adadelta',
+              metrics=['accuracy'])
 
 #training
 model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
