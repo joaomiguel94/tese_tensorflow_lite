@@ -35,6 +35,16 @@ from keras import layers
 from keras.regularizers import l2
 from keras.optimizers import SGD,Adadelta
 
+
+from keras.applications.vgg16 import VGG16
+from keras.applications.mobilenet import MobileNet
+
+from keras.preprocessing import image
+from keras.applications.vgg16 import preprocess_input
+import numpy as np
+
+
+
 batch_size = 30
 nb_classes = 8
 nb_epoch = 50
@@ -74,12 +84,13 @@ print(X_test.shape[0], 'test samples')
 Y_train = np_utils.to_categorical(y_train, nb_classes)
 Y_test = np_utils.to_categorical(y_test, nb_classes)
 
+
+#---------------------------------------------------------------
 #A sequential model (feedforward)
-model = Sequential()
+#model = Sequential()
 
 #adding 2 Convolutional Layers and a maxpooling layer with activation function rectified linear unit and  Dropout for regularization
-#---------------------------------------------------------------
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode='valid', input_shape=input_shape))
+""" model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode='valid', input_shape=input_shape))
 model.add(Activation('relu'))
 model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
 model.add(Activation('relu'))
@@ -107,44 +118,36 @@ model.add(Dense(64))
 model.add(Activation('relu'))
 model.add(Dropout(0.5))
 model.add(Dense(nb_classes))
-model.add(Activation('softmax'))
+model.add(Activation('softmax')) """
 #-----------------------------------------------------------------
 
-#compiling the model
-#model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+#---------------- VGG 16 --------------------
 
-#model.add(Convolution2D(32, 3,3,border_mode='same',input_shape=input_shape))
-#model.add(Activation('relu'))
-#model.add(Convolution2D(32, kernel_size[0], kernel_size[1]))
-#model.add(Activation('relu'))
-#model.add(MaxPooling2D(pool_size=(2, 2)))
-#model.add(Dropout(0.5))
+#model = VGG16(weights='imagenet', include_top=False, input_shape=input_shape, pooling=pool_size, classes=1000)
 
-#model.add(Convolution2D(64, kernel_size[0], kernel_size[1]))
-#model.add(Activation('relu'))
-#model.add(Convolution2D(64, kernel_size[0], kernel_size[1]))
-#model.add(Activation('relu'))
-#model.add(MaxPooling2D(pool_size=(2, 2)))
-#model.add(Dropout(0.5))
-#model.add(Activation('relu'))
-#model.add(MaxPooling2D(pool_size=(2, 2)))
-#model.add(Dropout(0.5))
+model = MobileNet(input_shape=input_shape, alpha=1.0, depth_multiplier=1, dropout=1e-3, include_top=True, weights='imagenet', input_tensor=None, pooling=None, classes=1000)
 
-#model.add(Flatten())
-#model.add(Dense(64))
-#model.add(Activation('relu'))
-#model.add(Dropout(0.5))
-#model.add(Dense(nb_classes))
-#model.add(Activation('softmax'))
+""" img_path = input_shape
+img = image.load_img(img_path, target_size=(224, 224))
+x = image.img_to_array(img)
+x = np.expand_dims(x, axis=0)
+x = preprocess_input(x)
 
+features = model.predict(x) """
+
+#-----------------------------------------------------------------
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
 model.compile(loss='categorical_crossentropy', optimizer=sgd,metrics=["accuracy"])
 #model.compile(loss='categorical_hinge', optimizer='rmsprop',metrics=["accuracy"])
 
+
+
+
+
 #training
-model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
-          verbose=1, validation_data=(X_test, Y_test))
+model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch, verbose=1, validation_data=(X_test, Y_test))
 score = model.evaluate(X_test, Y_test, verbose=0)
+
 print('Test score:', score[0])
 print('Test accuracy:', score[1])
 
