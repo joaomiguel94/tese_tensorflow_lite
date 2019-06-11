@@ -86,11 +86,11 @@ Y_test = np_utils.to_categorical(y_test, nb_classes)
 
 
 #---------------------------------------------------------------
-#A sequential model (feedforward)
-#model = Sequential()
-
+ #A sequential model (feedforward)
+model = Sequential()
+"""
 #adding 2 Convolutional Layers and a maxpooling layer with activation function rectified linear unit and  Dropout for regularization
-""" model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode='valid', input_shape=input_shape))
+model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode='valid', input_shape=input_shape))
 model.add(Activation('relu'))
 model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
 model.add(Activation('relu'))
@@ -101,15 +101,19 @@ model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
 model.add(Activation('relu'))
 model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
 model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
+model.add(MaxPooling2D(pool_size=pool_size, strides=1))
 model.add(Dropout(0.25))
 model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
+model.add(MaxPooling2D(pool_size=pool_size, strides=1))
 model.add(Dropout(0.25))
 
 model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
 model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
+model.add(MaxPooling2D(pool_size=pool_size, strides=1))
+model.add(Dropout(0.25))
+model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=pool_size, strides=1))
 model.add(Dropout(0.25))
 
 #A Fully Conntected Layer with relu and a output layer with softmax
@@ -123,17 +127,31 @@ model.add(Activation('softmax')) """
 
 #---------------- VGG 16 --------------------
 
-#model = VGG16(weights='imagenet', include_top=False, input_shape=input_shape, pooling=pool_size, classes=1000)
+vgg_layers = VGG16(
+    weights=None,#'imagenet',
+    include_top=False,
+    input_shape=(X_train.shape[1],X_train.shape[2],X_train.shape[3]),
+    pooling=pool_size,
+    classes=nb_classes)
 
-model = MobileNet(input_shape=input_shape, alpha=1.0, depth_multiplier=1, dropout=1e-3, include_top=True, weights='imagenet', input_tensor=None, pooling=None, classes=1000)
+model.add(vgg_layers)
 
-""" img_path = input_shape
-img = image.load_img(img_path, target_size=(224, 224))
-x = image.img_to_array(img)
-x = np.expand_dims(x, axis=0)
-x = preprocess_input(x)
+""" for layer in model.layers[:-3]:
+    layer.trainable = False """
 
-features = model.predict(x) """
+for layer in model.layers[:]:
+    layer.trainable = True
+
+model.add(Flatten())
+model.add(Dense(128))
+model.add(Activation('relu'))
+model.add(Dropout(0.5))
+model.add(Dense(nb_classes))
+model.add(Activation('softmax'))
+
+#-----------------------------------------------
+
+#model = MobileNet(input_shape=None, alpha=1.0, depth_multiplier=1, dropout=1e-3, include_top=True, weights='imagenet', input_tensor=None, pooling=None, classes=1000)
 
 #-----------------------------------------------------------------
 sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
@@ -141,14 +159,11 @@ model.compile(loss='categorical_crossentropy', optimizer=sgd,metrics=["accuracy"
 #model.compile(loss='categorical_hinge', optimizer='rmsprop',metrics=["accuracy"])
 
 
-
-
-
 #training
 model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch, verbose=1, validation_data=(X_test, Y_test))
 score = model.evaluate(X_test, Y_test, verbose=0)
 
 print('Test score:', score[0])
-print('Test accuracy:', score[1])
+print('Test accuracy:', score[1]*100)
 
 model.save("model.h5")
