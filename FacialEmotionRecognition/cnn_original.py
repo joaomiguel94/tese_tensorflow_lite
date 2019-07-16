@@ -97,4 +97,4 @@ score = model.evaluate(X_test, Y_test, verbose=0)
 print('Test score:', score[0])
 print('Test accuracy:', score[1])
 
-model.save("model.h5")
+model.save("model_original.h5")

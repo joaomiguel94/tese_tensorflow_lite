@@ -61,7 +61,8 @@ with open(dataset_path, 'rb') as pickled_dataset:
     data_obj = pickle.load(pickled_dataset)
 
 (training_data, validation_data, test_data) = data_obj['training_data'], data_obj['validation_data'], data_obj['test_data']
-(X_train, y_train), (X_test, y_test), (X_validation, y_validation) = (training_data[0],training_data[1]), (test_data[0],test_data[1]), (validation_data[0],validation_data[1])
+(X_train, y_train), (X_test, y_test) = (training_data[0],training_data[1]), (test_data[0],test_data[1])
+
 
 # input image dimensions
 img_rows, img_cols = data_obj['img_dim']['width'], data_obj['img_dim']['height']
@@ -70,73 +71,82 @@ img_rows, img_cols = data_obj['img_dim']['width'], data_obj['img_dim']['height']
 if K.image_dim_ordering() == 'th':
     X_train = X_train.reshape(X_train.shape[0], 1, img_rows, img_cols)
     X_test = X_test.reshape(X_test.shape[0], 1, img_rows, img_cols)
-    X_validation = X_validation.reshape(X_validation.shape[0], 1, img_rows, img_cols)
+    #X_validation = X_validation.reshape(X_validation.shape[0], 1, img_rows, img_cols)
     input_shape = (1, img_rows, img_cols)
 else:
     X_train = X_train.reshape(X_train.shape[0], img_rows, img_cols, 1)
     X_test = X_test.reshape(X_test.shape[0], img_rows, img_cols, 1)
-    X_validation = X_validation.reshape(X_validation.shape[0], img_rows, img_cols, 1)
+    #X_validation = X_validation.reshape(X_validation.shape[0], img_rows, img_cols, 1)
     input_shape = (img_rows, img_cols, 1)
 
 print('X_train shape:', X_train.shape)
 print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
-print(X_validation.shape[0], 'validation samples')
+#print(X_validation.shape[0], 'validation samples')
 
 # convert class vectors to binary class matrices
 Y_train = np_utils.to_categorical(y_train, nb_classes)
-Y_test = np_utils.to_categorical(y_test, nb_classes)
-Y_validation = np_utils.to_categorical(y_validation, nb_classes)
+#Y_test = np_utils.to_categorical(y_test, nb_classes)
+#Y_validation = np_utils.to_categorical(y_validation, nb_classes)
 
 
 #---------------------------------------------------------------
  #A sequential model (feedforward)
 model = Sequential()
 
-#adding 2 Convolutional Layers and a maxpooling layer with activation function rectified linear unit and  Dropout for regularization
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode='valid', input_shape=input_shape))
+model.add(Conv2D(filters=16, kernel_size=(7, 7), padding='same', name='image_array', input_shape=input_shape))
+model.add(BatchNormalization())
+model.add(Conv2D(filters=16, kernel_size=(7, 7), padding='same'))
+model.add(BatchNormalization())
 model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size))
-model.add(Dropout(0.25))
-
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-model.add(Activation('relu'))
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size, strides=1))
-model.add(Dropout(0.25))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size, strides=1))
-model.add(Dropout(0.25))
-
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size, strides=1))
-model.add(Dropout(0.25))
-model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=pool_size, strides=1))
-model.add(Dropout(0.25))
-
-#A Fully Conntected Layer with relu and a output layer with softmax
-model.add(Flatten())
-model.add(Dense(64))
-model.add(Activation('relu'))
+model.add(AveragePooling2D(pool_size=(2, 2), padding='same'))
 model.add(Dropout(0.5))
-model.add(Dense(nb_classes))
-model.add(Activation('softmax'))
 
-#-----------------------------------------------------------------
-#sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-#model.compile(loss='categorical_crossentropy', optimizer=sgd,metrics=["accuracy"])
+model.add(Conv2D(filters=32, kernel_size=(5, 5), padding='same'))
+model.add(BatchNormalization())
+model.add(Conv2D(filters=32, kernel_size=(5, 5), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('relu'))
+model.add(AveragePooling2D(pool_size=(2, 2), strides=1,  padding='same'))
+model.add(Dropout(0.5))
+
+model.add(Conv2D(filters=64, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Conv2D(filters=64, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('relu'))
+model.add(AveragePooling2D(pool_size=(2, 2), strides=1, padding='same'))
+model.add(Dropout(0.5))
+
+model.add(Conv2D(filters=128, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Conv2D(filters=128, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Activation('relu'))
+model.add(AveragePooling2D(pool_size=(2, 2), padding='same'))
+model.add(Dropout(0.5))
+
+model.add(Conv2D(filters=256, kernel_size=(3, 3), padding='same'))
+model.add(BatchNormalization())
+model.add(Conv2D(filters=nb_classes, kernel_size=(3, 3), padding='same'))
+model.add(GlobalAveragePooling2D())
+model.add(Activation('softmax',name='predictions'))
+
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-#model.compile(loss='categorical_hinge', optimizer='rmsprop',metrics=["accuracy"])
 
-class_weights = class_weight.compute_class_weight('balanced',
-                                                 np.unique(y_train),
-                                                 y_train)
+
+#{0:'neutral', 1:'anger', 2:'contempt', 3:'disgust', 4:'fear', 5:'happy', 6:'sadness', 7:'surprise'}
+
+class_weights = {0: 0.000761615,
+                1: 0.001290323,
+                2: 0.005376344,
+                3: 0.001451379,
+                4: 0.002398082,
+                5: 0.000970874,
+                6: 0.002380952,
+                7: 0.000956023
+                }
+
 #training
 
 for i in range(5):
