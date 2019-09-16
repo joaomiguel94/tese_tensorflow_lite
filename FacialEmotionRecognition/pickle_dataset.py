@@ -5,7 +5,7 @@ import math
 import numpy as np
 import os
 import pickle
-
+import random
 
 '''
 Extended CK dataset comprises of Image, Emotion Labels, and related data.
@@ -44,11 +44,11 @@ parser.add_argument('dataset_path', help='Absolute Path of the Extended CK Datas
 parser.add_argument('label_path', help='Absolute Path of the Extended CK Dataset Emotion Labels')
 parser.add_argument('-o', '--outfile', default='ck_dataset.pickle',
                     help='Name of the output pickle file')
-parser.add_argument('-t', '--training', dest='training_size', type=int, default=80,
+parser.add_argument('-t', '--training', dest='training_size', type=int, default=100,
                     help='Percent of dataset to use for Training')
 parser.add_argument('-v', '--validation', dest='validation_size', type=int,
-                    default=10, help='Percent of dataset to use for Validation')
-parser.add_argument('-test', '--test', dest='testing_size', type=int, default=10,
+                    default=0, help='Percent of dataset to use for Validation')
+parser.add_argument('-test', '--test', dest='testing_size', type=int, default=0,
                     help='Percent of dataset to use for Testing')
 parser.add_argument('--crop', dest='detect_face', action="store_true",
                     help='Crop and save face in the img')
@@ -57,6 +57,9 @@ parser.add_argument('--resize', nargs=2, type=int, default=[100, 100],
 
 dataset_path, label_path, outfile, training_size, validation_size, testing_size, detect_face, resize = vars(parser.parse_args()).values()
 # dataset_path, outfile, training_size, validation_size, testing_size, detect_face, resize = vars(parser.parse_args()).values()
+
+
+print(f'Train: {training_size}  Validation: {validation_size}  Test: {testing_size}')
 
 if training_size + validation_size + testing_size != 100:
     raise  argparse.ArgumentTypeError(
@@ -93,6 +96,7 @@ def load_img_data(files_path, label):
     global ck_dataset
     threshold = math.floor((len(files_path)-1)*0.3) #how many pictures be considered neutral in directory
     for file in files_path:
+        random.choice(file)
         if imghdr.what(file) in ['png']: #Makes sure file is .png image
             img = load_img(file)
             if img is None:
@@ -128,8 +132,25 @@ def load_extended_CK(img_path, emotion_label_path):
         if id in emotion_labels:
             load_img_data(files_path, emotion_labels[id])
 
+
+
+
+
 def serialize_extended_CK(img_path, emotion_label_path):
     load_extended_CK(img_path, emotion_label_path)
+    #--------------
+       
+    count = 0
+    for i in range (0,8):
+        count +=len(ck_dataset[i])
+    
+    print(f'Número de imagens:  {count}')
+
+    #---------------
+    indexes = list(range(0, count))   
+    random.shuffle(indexes) 
+    
+    print(f'Indices:  {indexes}')
 
     print("\nSerializing: ")
 
@@ -141,12 +162,41 @@ def serialize_extended_CK(img_path, emotion_label_path):
     validation_label = []
     test_label = []
 
-    for x,y in zip(ck_dataset,range(0,8)):
-        i1, i2 = math.ceil(len(x)*training_size), math.floor(len(x)*(training_size+validation_size))
 
+    print(f'Training size:  {training_size}')
+    print(f'Validation size:  {validation_size}')
+
+
+    for x,y in zip(ck_dataset,range(0,8)):
+
+        print(f'Len x:  {len(x)}')
+        
+        i1, i2 = math.floor(len(x)*training_size), math.floor(len(x)*(training_size+validation_size))
+
+        print(f'i1:  {i1}')
+        print(f'i2:  {i2}')
+               
+        for i in range (0, i1):
+            id = indexes[i]
+            print(f'ID:  {id}')
+            training_data.append(x[id])
+
+        for i in range (i1, i2):
+            id = indexes[i]
+            print(f'ID:  {id}')
+            validation_data.append(x[id])
+
+        for i in range (i2, len(x)):
+            id = indexes[i]
+            print(f'ID:  {id}')
+            test_data.append(x[id]) 
+        
+        """
         training_data.append(x[0:i1])
         validation_data.append(x[i1:i2])
-        test_data.append(x[i2:len(x)])
+        test_data.append(x[i2:len(x)]) 
+
+        """
 
         training_label.append(y*np.ones(shape=(len(x[0:i1]),1), dtype=np.int8)) #Generating Corresponding Label
         validation_label.append(y*np.ones(shape=(len(x[i1:i2]),1), dtype=np.int8))
@@ -163,5 +213,7 @@ def serialize_extended_CK(img_path, emotion_label_path):
             "test_data"       : [ test_data, test_label],
             "img_dim"         : {"width": resize[0], "height": resize[1]}
         }, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
 
 serialize_extended_CK(dataset_path, label_path)
+

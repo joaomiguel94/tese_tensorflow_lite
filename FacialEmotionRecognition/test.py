@@ -97,7 +97,7 @@ print ("----------------------"	)
 
 count = 0
 
-for i in range(592):
+for i in range(1177):
     max_index = np.argmax(predictions[i])
     emotion = emotions[max_index]
     #true_id = y_test[i]
@@ -108,4 +108,4 @@ for i in range(592):
 
     if (max_index == y_test[i]):
         count+=1
-print((count/592)*100)
+print((count/1177)*100)
