@@ -48,14 +48,14 @@ emotions = ["neutral", "anger", "contempt", "disgust", "fear", "happy", "sadness
 def get_files(emotion):
     '''Define function to get file list, randomly shuffle it 
     and split 80/20'''
-    files = glob.glob("data_set/%s/*" %emotion)
+ 
+    files = glob.glob("data_set4/%s/*" %emotion)
     random.shuffle(files)
     training = files[:int(len(files)*0.8)] #get first 80% of file list
     prediction = files[-int(len(files)*0.2):] #get last 20% of file list
     return training, prediction
 
-
-""" def make_sets():
+def make_sets():
     '''This function creates test/train data and labels.'''
  
     training_data = []
@@ -94,20 +94,7 @@ def get_files(emotion):
             img = img/255              
             prediction_data.append(img)                    
             prediction_labels.append(emotions.index(emotion))
-    return training_data, training_labels, prediction_data, prediction_labels """
-
-training = []
-prediction = []
-
-for emotion in emotions:
-    print(" working on %s" %emotion)
-    training, prediction = get_files(emotion)
-
-for x in range(len(training)): 
-    print( training[x])
-print("-----------------")    
-for x in range(len(prediction)): 
-    print( prediction[x])
+    return training_data, training_labels, prediction_data, prediction_labels
 
 batch_size = 30
 nb_classes = 8
@@ -121,68 +108,9 @@ pool_size = (2, 2)
 kernel_size = (5, 5)
 
 # input image dimensions
-img_rows, img_cols = 350, 350
+img_rows, img_cols = 150, 150
 
-def image_generator(set_of_data, bs, mode="train", aug=None):
-
-    while True:
-
-        images = []
-        labels = []
-
-        while len(images) < bs:
-
-            for item in set_of_data:
-                image = cv2.imread(item) #open image
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
-                img = img_to_array(gray)
-                img = img/255              
-                images.append(img) 
-                labels.append(emotions.index(emotion))
-        
-        Imgs = np.array(images)
-        Imgs = Imgs.astype("float32")
-        Lbs = np.array(labels)
-        Lbs = Lbs.astype("float32")
-
-        Lbs2 = np_utils.to_categorical(Lbs, nb_classes)  
-        Imgs2 = Imgs.reshape(len(Imgs), img_rows, img_cols, 1)
-
-        if aug is not None:
-            (Imgs2, Lbs2) = next(aug.flow(np.array(Imgs2),
-            Lbs2, batch_size=bs))
-      
-        yield (np.array(Imgs2), Lbs2)
-
-aug = ImageDataGenerator(rotation_range=20, zoom_range=0.15,
-	width_shift_range=0.2, height_shift_range=0.2, shear_range=0.15,
-	horizontal_flip=True, fill_mode="nearest")
-
-trainGen = image_generator(training, batch_size, mode="train", aug=aug)
-testGen = image_generator(prediction, batch_size, mode="train", aug=None)
-
-""" def generator(make_sets()):#X_data, y_data, batch_size):
-
-  samples_per_epoch = X_data.shape[0]
-  number_of_batches = samples_per_epoch/batch_size
-  counter=0
-
-  while 1:
-
-    X_train2, y_train2, X_test2, y_test2 = make_sets()
-
-    X_batch = np.array(X_data[batch_size*counter:batch_size*(counter+1)]).astype('float32')
-    y_batch = np.array(y_data[batch_size*counter:batch_size*(counter+1)]).astype('float32')
-    counter += 1
-    yield X_batch,y_batch
-
-    #restart counter to yeild data in the next epoch as well
-    if counter >= number_of_batches:
-        counter = 0 """
-
-
-
-""" #X_train2, y_train2, X_test2, y_test2 = make_sets()
+X_train2, y_train2, X_test2, y_test2 = make_sets()
 
 X_train = np.array(X_train2)
 #print("Tamanho X_train:", X_train.shape)
@@ -203,61 +131,35 @@ print("Tamanho y_test:", y_test.shape)
 print("Len X_train:", len(X_train))
 print("Len y_train:", len(y_train))
 print("Len X_test:", len(X_test))
-print("Len y_test:", len(y_test)) """
+print("Len y_test:", len(y_test))
 
-""" 
 data_generator = ImageDataGenerator(
     rotation_range=20,
     width_shift_range=0.02,
     height_shift_range=0.02,
     horizontal_flip=True) 
-data_generator.fit(X_train)"""
+data_generator.fit(X_train)
 
-""" data_generator = ImageDataGenerator(
-    rotation_range=20, 
-    zoom_range=0.15,
-	width_shift_range=0.2, 
-    height_shift_range=0.2, 
-    shear_range=0.15,
-	horizontal_flip=True, 
-    fill_mode="nearest")
-data_generator.fit(X_train) """
+Y_train = np_utils.to_categorical(y_train, nb_classes)
+Y_test = np_utils.to_categorical(y_test, nb_classes)
 
-
-""" def generator(features, labels, batch_size): # Create empty arrays to contain batch of features and labels# 
-    
-    batch_features = np.zeros((batch_size, img_cols, img_rows, 1))
-    batch_labels = np.zeros((batch_size,1)) 
-    while True:
-        for i in range(batch_size):
-            # choose random index in features
-            index= random.choice(len(features),1)
-            batch_features[i] = some_processing(features[index])
-            batch_labels[i] = labels[index]
-    yield batch_features, batch_labels """
-
-
-#Y_train = np_utils.to_categorical(y_train, nb_classes)
-#Y_test = np_utils.to_categorical(y_test, nb_classes)
-
-#X_train = X_train.reshape(len(X_train), img_rows, img_cols, 1)
-#X_test = X_test.reshape(len(X_test), img_rows, img_cols, 1) 
+X_train = X_train.reshape(len(X_train), img_rows, img_cols, 1)
+X_test = X_test.reshape(len(X_test), img_rows, img_cols, 1) 
 
 input_shape = (img_rows, img_cols, 1)
 
-#print("Tamanho X_train:", X_train.shape)
-#print("Tamanho y_train:", y_train.shape)
-#print("Tamanho X_test:", X_test.shape)
-#print("Tamanho y_test:", y_test.shape)
+print("Tamanho X_train:", X_train.shape)
+print("Tamanho y_train:", y_train.shape)
+print("Tamanho X_test:", X_test.shape)
+print("Tamanho y_test:", y_test.shape)
 
 
-#print('X_train shape:', X_train.shape)
-#print(X_train.shape[0], 'train samples')
-#print(X_test.shape[0], 'test samples')
+print('X_train shape:', X_train.shape)
+print(X_train.shape[0], 'train samples')
+print(X_test.shape[0], 'test samples')
 
-#print("Tamanho Y_train:", Y_train.shape)
-#print("Tamanho Y_test:", Y_test.shape)
-
+print("Tamanho Y_train:", Y_train.shape)
+print("Tamanho Y_test:", Y_test.shape)
 
 start_time = datetime.now()  
 
@@ -308,9 +210,9 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 
 #training
 
-""" model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
+history = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=nb_epoch,
           verbose=1, validation_data=(X_test, Y_test))
-"""
+
 
 """ history = model.fit_generator(data_generator.flow(X_train, Y_train, batch_size=batch_size),
         steps_per_epoch=len(X_train) // batch_size,
@@ -324,20 +226,14 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 	epochs=nb_epoch) """
 
 #history = model.fit_generator(generator(X_train, Y_train, batch_size), samples_per_epoch=50, nb_epoch=nb_epoch)
-#score = model.evaluate(X_test, y_test, verbose=0)
-
-history = model.fit_generator(
-	trainGen,
-	steps_per_epoch=len(training) // batch_size,
-	validation_data=testGen,
-	validation_steps=30,
-	epochs=nb_epoch)
+score = model.evaluate(X_test, Y_test, verbose=0)
 
 time_elapsed = datetime.now() - start_time 
 
-#print('Test score: ', score[0])
-#print('Test accuracy: ', score[1]*100)
-#print('Total training time: ', format(time_elapsed))
+print('Test score: ', score[0])
+print('Test accuracy: ', score[1]*100)
+print('Total training time: ', format(time_elapsed))
+
 
 """ # K Fold
 for i in range(5):
@@ -348,15 +244,14 @@ for i in range(5):
     score = model.evaluate(val_x, val_y, verbose=0)
 
     print("======="*12, end="\n\n\n")
-
+ """
 time_elapsed = datetime.now() - start_time
 
 print('Test score: ', score[0])
 print('Test accuracy: ', score[1]*100)
 print('Total training time: ', format(time_elapsed))
- """
 
-""" # Plot training & validation accuracy values
+# Plot training & validation accuracy values
 plt.plot(history.history['accuracy'])
 plt.plot(history.history['val_accuracy'])
 plt.title('Model accuracy')
@@ -398,5 +293,4 @@ plt.xlabel('Predicted')
 plt.ylabel('True')
 plt.show()
 
- """
-model.save("model.h5")
+model.save("model_final.h5")
