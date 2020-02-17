@@ -3,7 +3,7 @@ from keras.preprocessing import image
 import numpy as np
 import cv2
 
-model = load_model('model_final.h5')
+model = load_model('modelofinal.h5')
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 emotions = ["neutral", "anger", "contempt", "disgust", "fear", "happy", "sadness", "surprise"] #Define emotions
@@ -14,7 +14,7 @@ faceDet_two = cv2.CascadeClassifier("haarcascade_frontalface_alt2.xml")
 faceDet_three = cv2.CascadeClassifier("haarcascade_frontalface_alt.xml")
 faceDet_four = cv2.CascadeClassifier("haarcascade_frontalface_alt_tree.xml")
 
-frame = cv2.imread('imagens/happy3.png') #Open image
+frame = cv2.imread('imagens/disgust2.jpeg') #Open image
 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
 
 #Detect face using 4 different classifiers
@@ -56,7 +56,8 @@ for (x, y, w, h) in facefeatures: #get coordinates and size of rectangle contain
 
 #test_image = image.load_img(out, color_mode = "grayscale", target_size = (150, 150))
 
-#cv2.imshow('image',out)
+cv2.imshow('image',out)
+cv2.imwrite('output.jpg', out)
 
 test_image = image.img_to_array(out)
 test_image = np.expand_dims(test_image, axis = 0)

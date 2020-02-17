@@ -49,13 +49,16 @@ import matplotlib.pyplot as plt
 from keras import optimizers
 from keras.models import load_model
 from keras.preprocessing import image
+from keras import metrics
+
 
 emotions = ["neutral", "anger", "contempt", "disgust", "fear", "happy", "sadness", "surprise"] #Define emotions
 
 def get_files(emotion):
  
-    files = glob.glob("data_set_150x150/%s/*" %emotion)
-    random.shuffle(files)
+    files = glob.glob("imagens/%s/*" %emotion)
+    #files = glob.glob("data_set_150x150/%s/*" %emotion)
+    #random.shuffle(files)
     #training = files[:int(len(files)*0.8)] #get first 80% of file list
     #test = files[-int(len(files)*0.2):] #get last 20% of file list
     #return training, test
@@ -75,15 +78,14 @@ for emotion in emotions:
     #training = training + taux
     #test = test + paux
 
-random.shuffle(temp)
+#random.shuffle(temp)
 
-training = temp[:int(len(temp)*0.7)] #get first 80% of file list
-test = temp[-int(len(temp)*0.1):] #get last 20% of file list
-val = temp[-int(len(temp)*0.2):] #get last 20% of file list
+training, test, val  = np.split(temp, [int(.8 * len(temp)), int(.9 * len(temp))]) 
+test = temp
 
-random.shuffle(training)
+""" random.shuffle(training)
 random.shuffle(test)
-random.shuffle(val)
+random.shuffle(val) """
 """ 
 for i in range(len(training)):
     print(training[i]) """
@@ -146,19 +148,46 @@ img_rows, img_cols = 150, 150
 
 X_train2, y_train2, X_test2, y_test2, X_val2, y_val2 = make_sets()
 
-model = load_model('model_final.h5')
+#model = load_model('model_vgg16.h5')
+
+
+""" dependencies = {
+    'accuracy': keras.metrics.BinaryAccuracy,
+    'precision': keras.metrics.Precision,
+    'recall': keras.metrics.Recall,
+    'auc': keras.metrics.AUC,
+} """
+
+#model = keras.models.load_model('model_weights.h5', custom_objects=dependencies)
+#model = keras.models.load_model('model_weights.h5')
+model = keras.models.load_model('model_lstm.h5')
+
+
+""" metrics = [
+      keras.metrics.BinaryAccuracy(name='accuracy'),
+      keras.metrics.Precision(name='precision'),
+      keras.metrics.Recall(name='recall'),
+      keras.metrics.AUC(name='auc'),
+] """
+
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+#model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=metrics)
 
+count = 0
+emotion_ant = ""
 
-for i in range(20):
+array = [0, 0, 0, 0, 0, 0, 0, 0]
 
-    test_image = image.load_img(training[i], color_mode = "grayscale", target_size = (150, 150)) 
+for i in range(len(test)):
+
+    test_image = image.load_img(test[i], color_mode = "grayscale", target_size = (150, 150)) 
     test_image = image.img_to_array(test_image)
     test_image = np.expand_dims(test_image, axis = 0)
     result = model.predict(test_image)
     
-    print(f"Imagem: {training[i]}")
+    print(f"Imagem: {test[i]}")
     for j in range(len(result)):
+
         #print(f"{emotions[j]}: {result[j]*100}")
         print ("Neutral: %", str(round(result[0][0]/1.0 * 100, 4)))
         print ("Anger: %", str(round(result[0][1]/1.0 * 100, 4)))
@@ -171,6 +200,19 @@ for i in range(20):
         max_index = np.argmax(result[0])
         emotion = emotions[max_index]
         print (f"Prediction: {emotion}")
-        print ("----------------------"	)	
+        if max_index == emotions.index(test[i].split("/")[1]):
+            count = count +1
+            print(f"Veredicto: Acertou")
+            array[max_index] = array[max_index] + 1
+        else:
+            print(f"Veredicto: Falhou")
+        print ("----------------------"	)
 
-    #print(f"Imagem: {training[i]} ---> Prediction: {result}")
+print ("")              
+print(f"Nº Imagens: {len(test)}")
+print(f"Nº certadas: {count}")
+print(f"Percentagem acertadas: {(count/len(test))*100}")
+print ("")
+print(f"Acerto por classe:")
+for i in range(len(array)):
+    print(f"{emotions[i]}: {array[i]}")
