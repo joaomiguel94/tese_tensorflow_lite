@@ -52,7 +52,7 @@ from keras.preprocessing import image
 from keras import metrics
 
 
-emotions = ["neutral", "anger", "contempt", "disgust", "fear", "happy", "sadness", "surprise"] #Define emotions
+emotions = ['neutral' , 'anger' , 'disgust'  , 'fear' ,  'happy' , 'sadness', 'surprise'] #Define emotions
 
 def get_files(emotion):
  
@@ -80,24 +80,25 @@ for emotion in emotions:
 
 #random.shuffle(temp)
 
-training, test, val  = np.split(temp, [int(.8 * len(temp)), int(.9 * len(temp))]) 
+""" training, test, val  = np.split(temp, [int(.8 * len(temp)), int(.9 * len(temp))])  """
 test = temp
 
 """ random.shuffle(training)
 random.shuffle(test)
 random.shuffle(val) """
-""" 
-for i in range(len(training)):
-    print(training[i]) """
 
+for i in range(len(test)):
+    print(test[i])
+
+""" 
 training_data = []
 training_labels = []
 test_data = []
 test_labels = []
 val_data = []
-val_labels = []
+val_labels = [] """
 
-
+""" 
 def make_sets():
     '''This function creates test/train data and labels.'''
  
@@ -108,8 +109,8 @@ def make_sets():
         #Append data to training and prediction list, and generate labels 0-7
     for item in training:      
         image = cv2.imread(item) #open image
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
-        img = img_to_array(gray)
+        #gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) 
+        #img = img_to_array(gray)
         #img = img/255              
         training_data.append(img) 
         training_labels.append(emotions.index(item.split("/")[1]))        
@@ -144,9 +145,9 @@ nb_filters = 3
 pool_size = (2, 2)
 kernel_size = (5, 5)
 
-img_rows, img_cols = 150, 150
+img_rows, img_cols = 150, 150 """
 
-X_train2, y_train2, X_test2, y_test2, X_val2, y_val2 = make_sets()
+#X_train2, y_train2, X_test2, y_test2, X_val2, y_val2 = make_sets()
 
 #model = load_model('model_vgg16.h5')
 
@@ -160,8 +161,8 @@ X_train2, y_train2, X_test2, y_test2, X_val2, y_val2 = make_sets()
 
 #model = keras.models.load_model('model_weights.h5', custom_objects=dependencies)
 #model = keras.models.load_model('model_weights.h5')
-model = keras.models.load_model('model_lstm.h5')
-
+model = keras.models.load_model('models/model_lstm_2.h5')
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 """ metrics = [
       keras.metrics.BinaryAccuracy(name='accuracy'),
@@ -170,20 +171,76 @@ model = keras.models.load_model('model_lstm.h5')
       keras.metrics.AUC(name='auc'),
 ] """
 
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+#model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 #model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=metrics)
 
 count = 0
 emotion_ant = ""
 
-array = [0, 0, 0, 0, 0, 0, 0, 0]
+faceDet = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+faceDet_two = cv2.CascadeClassifier("haarcascade_frontalface_alt2.xml")
+faceDet_three = cv2.CascadeClassifier("haarcascade_frontalface_alt.xml")
+faceDet_four = cv2.CascadeClassifier("haarcascade_frontalface_alt_tree.xml")
+
+array = [0, 0, 0, 0, 0, 0, 0]
 
 for i in range(len(test)):
 
-    test_image = image.load_img(test[i], color_mode = "grayscale", target_size = (150, 150)) 
-    test_image = image.img_to_array(test_image)
+    frame = cv2.imread(test[i]) #Open image
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
+
+    #Detect face using 4 different classifiers
+    face = faceDet.detectMultiScale(gray, 
+    scaleFactor=1.1, minNeighbors=10, minSize=(5, 5), 
+    flags=cv2.CASCADE_SCALE_IMAGE)
+    face_two = faceDet_two.detectMultiScale(gray, 
+    scaleFactor=1.1, minNeighbors=10, minSize=(5, 5), 
+    flags=cv2.CASCADE_SCALE_IMAGE)
+    face_three = faceDet_three.detectMultiScale(gray, 
+    scaleFactor=1.1, minNeighbors=10, minSize=(5, 5), 
+    flags=cv2.CASCADE_SCALE_IMAGE)
+    face_four = faceDet_four.detectMultiScale(gray, 
+    scaleFactor=1.1, minNeighbors=10, minSize=(5, 5), 
+    flags=cv2.CASCADE_SCALE_IMAGE)
+
+    #Go over detected faces, stop at first detected face, return empty if no face.
+    if len(face) == 1:
+        facefeatures = face
+    elif len(face_two) == 1:
+        facefeatures = face_two
+    elif len(face_three) == 1:
+        facefeatures = face_three
+    elif len(face_four) == 1:
+        facefeatures = face_four
+    else:
+        facefeatures = ""
+
+    result = []
+    out = []
+
+    #Cut and save face
+    for (x, y, w, h) in facefeatures: #get coordinates and size of rectangle containing face
+        gray = gray[y:y+h, x:x+w] #Cut the frame to size
+        try:
+            out = cv2.resize(gray, (150, 150)) #Resize face so all images have same size
+        except:
+            pass #If error, pass file
+
+    #test_image = image.load_img(out, color_mode = "grayscale", target_size = (150, 150))
+
+    #cv2.imshow('image',out)
+    #cv2.imwrite("outputs/" + test[i].split("/")[2], out)
+
+    test_image = image.img_to_array(out)
+    #print(f"Shape: {test_image.shape}")
     test_image = np.expand_dims(test_image, axis = 0)
     result = model.predict(test_image)
+
+    #test_image = image.load_img(test[i], color_mode = "grayscale", target_size = (150, 150)) 
+    #test_image = image.img_to_array(test_image)
+    #test_image = np.expand_dims(test_image, axis = 0)
+    #cv2.write(test[i], "img.jpg")
+    #result = model.predict(test_image)
     
     print(f"Imagem: {test[i]}")
     for j in range(len(result)):
@@ -191,12 +248,12 @@ for i in range(len(test)):
         #print(f"{emotions[j]}: {result[j]*100}")
         print ("Neutral: %", str(round(result[0][0]/1.0 * 100, 4)))
         print ("Anger: %", str(round(result[0][1]/1.0 * 100, 4)))
-        print ("Contempt: %", str(round(result[0][2]/1.0 * 100, 4)))
-        print ("Disgust: %", str(round(result[0][3]/1.0 * 100, 4)))
-        print ("Fear: %", str(round(result[0][4]/1.0 * 100, 4)))
-        print ("Happy: %", str(round(result[0][5]/1.0 * 100, 4)))	
-        print ("Sadness: %", str(round(result[0][6]/1.0 * 100, 4)))		
-        print ("Surprise: %", str(round(result[0][7]/1.0 * 100, 4)))		
+        #print ("Contempt: %", str(round(result[0][2]/1.0 * 100, 4)))
+        print ("Disgust: %", str(round(result[0][2]/1.0 * 100, 4)))
+        print ("Fear: %", str(round(result[0][3]/1.0 * 100, 4)))
+        print ("Happy: %", str(round(result[0][4]/1.0 * 100, 4)))	
+        print ("Sadness: %", str(round(result[0][5]/1.0 * 100, 4)))		
+        print ("Surprise: %", str(round(result[0][6]/1.0 * 100, 4)))		
         max_index = np.argmax(result[0])
         emotion = emotions[max_index]
         print (f"Prediction: {emotion}")
